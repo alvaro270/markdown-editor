@@ -1,0 +1,16 @@
+/* Estilos personalizados para mejor experiencia */
+.editor-area {
+  font-family: "Courier New", monospace;
+}
+.preview-area {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+/* Clase para contrastar encabezados */
+.contrasted-heading {
+  color: #ff6b6b !important;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3) !important;
+  background: linear-gradient(45deg, #ff6b6b, #4ecdc4) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
