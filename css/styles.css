@@ -1,3 +1,15 @@
+/* Estilos para listas en la vista previa */
+#htmlPreview ul {
+  list-style-type: disc;
+  margin-left: 20px;
+  margin-bottom: 16px;
+}
+
+#htmlPreview ol {
+  list-style-type: decimal;
+  margin-left: 20px;
+  margin-bottom: 16px;
+}
 /* Estilos personalizados para mejor experiencia */
 .editor-area {
   font-family: "Courier New", monospace;

@@ -55,7 +55,9 @@ function processHeaders(html) {
   html = html.replace(/^#### (.+)$/gm, "<h4>$1</h4>");
   html = html.replace(/^##### (.+)$/gm, "<h5>$1</h5>");
   html = html.replace(/^###### (.+)$/gm, "<h6>$1</h6>");
-  
+  //  PROCESAR FORMATO DE TEXTO (NEGRITA Y CURSIVA)
+  html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  html = html.replace(/\*([^*]+)\*/g, "<em>$1</em>");
   return html;
 }
 
