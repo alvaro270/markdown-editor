@@ -26,6 +26,9 @@ let updateTimeout = null; // Para optimizar las actualizaciones automáticas
 // 2. FUNCIÓN MEJORADA PARA CONVERTIR MARKDOWN A HTML
 // ========================================
 
+// 2. FUNCIÓN MEJORADA CON MANEJO DE EXCEPCIONES Y MARKED
+// ========================================
+
 function markdownToHtml(markdown) {
   let html = markdown;
 
@@ -41,7 +44,109 @@ function markdownToHtml(markdown) {
   // Procesar párrafos
   html = processParagraphs(html);
 
-  return html;
+  // Aplicar estilos de sintaxis
+  try {
+    // 🎯 HU1: Validación de entrada vacía
+    if (!markdown || markdown.trim() === "") {
+      throw new Error("No se ingresó contenido");
+    }
+
+    // 🎯 HU2: Validación de sintaxis Markdown mal formada
+    validateMarkdownSyntax(markdown);
+
+    // 🎯 HU3: Usar librería Marked con manejo de errores
+    let html;
+    try {
+      html = marked.parse(markdown);
+    } catch (markedError) {
+      console.error("❌ Error en conversión con Marked:", markedError);
+      throw new Error(
+        "Error interno durante la conversión. Por favor, revisa tu sintaxis Markdown."
+      );
+    }
+
+    return html;
+  } catch (error) {
+    // Manejo centralizado de errores
+    handleMarkdownError(error);
+    return generateErrorHTML(error.message);
+  }
+}
+
+// 🎯 HU2: Función para validar sintaxis Markdown
+function validateMarkdownSyntax(markdown) {
+  const lines = markdown.split("\n");
+
+  lines.forEach((line, index) => {
+    // Detectar encabezados mal formados (sin espacio después de #)
+    if (/^#{1,6}[^#\s]/.test(line.trim())) {
+      throw new Error(
+        `Encabezado mal formado en línea ${
+          index + 1
+        }: "${line.trim()}". Falta espacio después de #`
+      );
+    }
+
+    // Detectar listas mal formadas (sin espacio después de - o *)
+    if (/^[-*][^\s]/.test(line.trim())) {
+      throw new Error(
+        `Lista mal formada en línea ${
+          index + 1
+        }: "${line.trim()}". Falta espacio después de - o *`
+      );
+    }
+  });
+}
+
+// 🎯 HU3: Función para manejar errores de manera amigable
+function handleMarkdownError(error) {
+  console.error("❌ Error en procesamiento de Markdown:", error);
+
+  // Mostrar notificación visual al usuario
+  showErrorNotification(error.message);
+}
+
+// Función para mostrar notificación de error
+function showErrorNotification(message) {
+  // Crear elemento de notificación
+  const notification = document.createElement("div");
+  notification.className =
+    "fixed top-4 right-4 bg-red-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 max-w-md";
+  notification.innerHTML = `
+    <div class="flex items-start gap-3">
+      <span class="text-xl">⚠️</span>
+      <div>
+        <div class="font-semibold">Error de Markdown</div>
+        <div class="text-sm opacity-90">${message}</div>
+      </div>
+      <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-white hover:text-gray-200">✕</button>
+    </div>
+  `;
+
+  document.body.appendChild(notification);
+
+  // Auto-remover después de 8 segundos
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.parentNode.removeChild(notification);
+    }
+  }, 8000);
+}
+
+// Función para generar HTML de error amigable
+function generateErrorHTML(errorMessage) {
+  return `
+    <div class="error-container bg-red-50 border-l-4 border-red-500 p-4 rounded">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">⚠️</span>
+        <div>
+          <h3 class="text-red-800 font-semibold">Error en el Markdown</h3>
+          <p class="text-red-600 text-sm mt-1">${errorMessage}</p>
+          <p class="text-red-500 text-xs mt-2">💡 Tip: Revisa tu syntaxe y vuelve a intentar</p>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 // ========================================
@@ -55,7 +160,7 @@ function processHeaders(html) {
   html = html.replace(/^#### (.+)$/gm, "<h4>$1</h4>");
   html = html.replace(/^##### (.+)$/gm, "<h5>$1</h5>");
   html = html.replace(/^###### (.+)$/gm, "<h6>$1</h6>");
-  
+
   // Procesar formato de texto
   html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   html = html.replace(/\*([^*]+)\*/g, "<em>$1</em>");
@@ -63,45 +168,46 @@ function processHeaders(html) {
 }
 
 function processParagraphs(html) {
-  const lines = html.split('\n');
+  const lines = html.split("\n");
   const result = [];
   let inParagraph = false;
-  
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
-    
-    const isSpecialLine = line.startsWith('<h') || 
-                         line.startsWith('<ul') || 
-                         line.startsWith('<ol') || 
-                         line.startsWith('<li') || 
-                         line.startsWith('<pre') || 
-                         line.startsWith('</ul>') || 
-                         line.startsWith('</ol>') || 
-                         line === '';
-    
+
+    const isSpecialLine =
+      line.startsWith("<h") ||
+      line.startsWith("<ul") ||
+      line.startsWith("<ol") ||
+      line.startsWith("<li") ||
+      line.startsWith("<pre") ||
+      line.startsWith("</ul>") ||
+      line.startsWith("</ol>") ||
+      line === "";
+
     if (isSpecialLine) {
       if (inParagraph) {
-        result.push('</p>');
+        result.push("</p>");
         inParagraph = false;
       }
-      
-      if (line !== '') {
+
+      if (line !== "") {
         result.push(line);
       }
     } else {
       if (!inParagraph) {
-        result.push('<p>');
+        result.push("<p>");
         inParagraph = true;
       }
       result.push(line);
     }
   }
-  
+
   if (inParagraph) {
-    result.push('</p>');
+    result.push("</p>");
   }
-  
-  return result.join('\n');
+
+  return result.join("\n");
 }
 
 // ========================================
@@ -117,28 +223,33 @@ function autoUpdatePreview() {
   if (updateTimeout) {
     clearTimeout(updateTimeout);
   }
-  
+
   // Programar actualización después de 300ms de inactividad
   updateTimeout = setTimeout(() => {
     try {
       const markdownContent = editor.value;
+
+      // 🎯 HU1: Validación mejorada antes de procesar
+      if (!markdownContent || markdownContent.trim() === "") {
+        preview.innerHTML =
+          '<p class="text-gray-500 italic">El editor está vacío. Comienza a escribir para ver la vista previa...</p>';
+        resetCounters();
+        return;
+      }
+
       const htmlContent = markdownToHtml(markdownContent);
-      
       preview.innerHTML = htmlContent;
-      applySyntaxHighlightingStyles();
-      
-      // 🆕 HU3: Actualizar contadores al mismo tiempo
+
+      // Actualizar contadores y timestamp
       updateCounters();
-      
-      // Actualizar timestamp
       updateLastModified();
-      
-      console.log('✅ Vista previa actualizada automáticamente');
-      
+
+      console.log("✅ Vista previa actualizada automáticamente");
     } catch (error) {
-      console.error('❌ Error en actualización automática:', error);
+      console.error("❌ Error en actualización automática:", error);
+      // No mostrar notificación aquí para evitar spam, ya se maneja en markdownToHtml
     }
-  }, 300); // 300ms de delay para evitar actualizaciones excesivas
+  }, 300);
 }
 
 // ========================================
@@ -150,25 +261,28 @@ function autoUpdatePreview() {
  */
 function clearEditor() {
   // Confirmar acción para evitar pérdida accidental
-  const confirmClear = confirm('¿Estás seguro de que quieres limpiar todo el contenido?');
-  
+  const confirmClear = confirm(
+    "¿Estás seguro de que quieres limpiar todo el contenido?"
+  );
+
   if (confirmClear) {
     // Limpiar editor
-    editor.value = '';
-    
+    editor.value = "";
+
     // Limpiar vista previa
-    preview.innerHTML = '<p class="text-gray-500 italic">El editor está vacío. Comienza a escribir para ver la vista previa...</p>';
-    
+    preview.innerHTML =
+      '<p class="text-gray-500 italic">El editor está vacío. Comienza a escribir para ver la vista previa...</p>';
+
     // 🆕 HU3: Resetear contadores
     resetCounters();
-    
+
     // Enfocar el editor para facilitar escritura inmediata
     editor.focus();
-    
+
     // Feedback visual
     showClearFeedback();
-    
-    console.log('🗑️ Editor limpiado completamente');
+
+    console.log("🗑️ Editor limpiado completamente");
   }
 }
 
@@ -181,16 +295,16 @@ function clearEditor() {
  */
 function updateCounters() {
   const text = editor.value;
-  
+
   // Contar palabras (dividir por espacios y filtrar vacíos)
-  const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
-  
+  const words = text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
+
   // Contar caracteres totales
   const totalChars = text.length;
-  
+
   // Contar caracteres sin espacios
-  const charsNoSpaces = text.replace(/\s/g, '').length;
-  
+  const charsNoSpaces = text.replace(/\s/g, "").length;
+
   // Actualizar DOM con animación
   animateCounterUpdate(wordCountEl, words);
   animateCounterUpdate(charCountEl, totalChars);
@@ -202,15 +316,15 @@ function updateCounters() {
  */
 function animateCounterUpdate(element, newValue) {
   const currentValue = parseInt(element.textContent) || 0;
-  
+
   if (currentValue !== newValue) {
     // Agregar clase de animación
-    element.classList.add('updated');
+    element.classList.add("updated");
     element.textContent = newValue;
-    
+
     // Remover clase después de la animación
     setTimeout(() => {
-      element.classList.remove('updated');
+      element.classList.remove("updated");
     }, 200);
   }
 }
@@ -232,7 +346,7 @@ function showClearFeedback() {
   clearBtn.textContent = "✅ ¡Limpiado!";
   clearBtn.classList.remove("bg-red-500");
   clearBtn.classList.add("bg-green-600");
-  
+
   setTimeout(() => {
     clearBtn.textContent = "🗑️ Limpiar Editor";
     clearBtn.classList.remove("bg-green-600");
@@ -242,10 +356,10 @@ function showClearFeedback() {
 
 function updateLastModified() {
   const now = new Date();
-  const timeString = now.toLocaleTimeString('es-ES', { 
-    hour: '2-digit', 
-    minute: '2-digit',
-    second: '2-digit'
+  const timeString = now.toLocaleTimeString("es-ES", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
   });
   lastUpdatedEl.textContent = `Actualizado: ${timeString}`;
 }
@@ -258,18 +372,17 @@ function generatePreview() {
   try {
     const markdownContent = editor.value;
     const htmlContent = markdownToHtml(markdownContent);
-    
+
     preview.innerHTML = htmlContent;
-    applySyntaxHighlightingStyles();
-    updateCounters(); // 🆕 Actualizar contadores también
+    updateCounters();
     updateLastModified();
-    
+
     showSuccessFeedback();
-    console.log('✅ Vista previa generada manualmente');
-    
+    console.log("✅ Vista previa generada manualmente");
   } catch (error) {
-    console.error('❌ Error al generar vista previa:', error);
+    console.error("❌ Error al generar vista previa:", error);
     showErrorFeedback();
+    // El error ya se maneja en markdownToHtml, no necesitamos hacer nada más aquí
   }
 }
 
@@ -277,7 +390,7 @@ function showSuccessFeedback() {
   generateBtn.textContent = "✅ ¡Generado!";
   generateBtn.classList.remove("bg-green-500");
   generateBtn.classList.add("bg-emerald-600");
-  
+
   setTimeout(() => {
     generateBtn.textContent = "🔄 Generar Vista Previa";
     generateBtn.classList.remove("bg-emerald-600");
@@ -289,7 +402,7 @@ function showErrorFeedback() {
   generateBtn.textContent = "❌ Error";
   generateBtn.classList.remove("bg-green-500");
   generateBtn.classList.add("bg-red-600");
-  
+
   setTimeout(() => {
     generateBtn.textContent = "🔄 Generar Vista Previa";
     generateBtn.classList.remove("bg-red-600");
@@ -298,9 +411,9 @@ function showErrorFeedback() {
 }
 
 function applySyntaxHighlightingStyles() {
-  if (!document.getElementById('syntax-styles')) {
-    const style = document.createElement('style');
-    style.id = 'syntax-styles';
+  if (!document.getElementById("syntax-styles")) {
+    const style = document.createElement("style");
+    style.id = "syntax-styles";
     style.textContent = `
       .keyword { color: #ff79c6; font-weight: bold; }
       .string { color: #f1fa8c; }
@@ -314,15 +427,17 @@ function applySyntaxHighlightingStyles() {
 
 function contrastHeadings() {
   const headings = preview.querySelectorAll("h1, h2, h3, h4, h5, h6");
-  
+
   if (headings.length === 0) {
-    alert("⚠️ Primero genera la vista previa para poder contrastar los encabezados");
+    alert(
+      "⚠️ Primero genera la vista previa para poder contrastar los encabezados"
+    );
     return;
   }
-  
+
   isContrasted = !isContrasted;
-  
-  const applyContrastCallback = function(heading) {
+
+  const applyContrastCallback = function (heading) {
     if (isContrasted) {
       heading.classList.add("contrasted-heading");
       heading.style.fontSize = "1.5em";
@@ -337,7 +452,7 @@ function contrastHeadings() {
       heading.style.transition = "";
     }
   };
-  
+
   headings.forEach(applyContrastCallback);
   updateContrastButton();
 }
@@ -359,24 +474,24 @@ function updateContrastButton() {
 // ========================================
 
 // 🆕 HU1: Event listener para actualización automática
-editor.addEventListener('input', autoUpdatePreview);
+editor.addEventListener("input", autoUpdatePreview);
 
 // 🆕 HU2: Event listener para limpiar editor
-clearBtn.addEventListener('click', clearEditor);
+clearBtn.addEventListener("click", clearEditor);
 
 // Event listeners existentes
-formatBtn.addEventListener("click", function() {
-  console.log('🎯 HU1: Aplicando formato con callbacks...');
+formatBtn.addEventListener("click", function () {
+  console.log("🎯 HU1: Aplicando formato con callbacks...");
   toggleTextFormat();
 });
 
-generateBtn.addEventListener("click", function() {
-  console.log('🎯 Generando vista previa manualmente...');
+generateBtn.addEventListener("click", function () {
+  console.log("🎯 Generando vista previa manualmente...");
   generatePreview();
 });
 
-contrastBtn.addEventListener("click", function() {
-  console.log('🎨 Aplicando contraste a encabezados...');
+contrastBtn.addEventListener("click", function () {
+  console.log("🎨 Aplicando contraste a encabezados...");
   contrastHeadings();
 });
 
@@ -384,12 +499,12 @@ contrastBtn.addEventListener("click", function() {
 // 10. INICIALIZACIÓN
 // ========================================
 
-window.addEventListener("load", function() {
-  console.log('🚀 Aplicación cargada - Configurando funcionalidades...');
-  
+window.addEventListener("load", function () {
+  console.log("🚀 Aplicación cargada - Configurando funcionalidades...");
+
   // Generar vista previa inicial
   autoUpdatePreview();
-  
+
   // Mostrar información de nuevas funcionalidades
   console.log(`
   📚 NUEVAS FUNCIONALIDADES AGREGADAS:
@@ -440,7 +555,7 @@ console.log("¡Nuevas funcionalidades funcionando!");
 \`\`\`
 
 ¡Sigue escribiendo para ver las funcionalidades en acción!`;
-  
+
   editor.value = examples;
   // No necesitamos llamar generatePreview() porque se actualiza automáticamente
 }

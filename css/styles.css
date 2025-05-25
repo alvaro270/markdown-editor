@@ -42,7 +42,7 @@
 }
 
 .code-block::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -53,7 +53,7 @@
 
 .code-block code {
   color: #e2e8f0;
-  font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+  font-family: "Fira Code", "Consolas", "Monaco", monospace;
   font-size: 14px;
   line-height: 1.6;
   display: block;
@@ -79,12 +79,44 @@
   transition: transform 0.1s ease;
 }
 
-  /* 🆕 Estilos para el contador */
-      .counter-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        transition: all 0.3s ease;
-      }
-      .counter-card:hover {
-        transform: scale(1.05);
-        box-shadow: 0 8px 25px rgba(118, 75, 162, 0.15);
-      }
+/* 🆕 Estilos para el contador */
+.counter-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  transition: all 0.3s ease;
+}
+.counter-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 25px rgba(118, 75, 162, 0.15);
+}
+/* 🆕 Estilos para manejo de errores */
+.error-container {
+  animation: slideInRight 0.3s ease-out;
+  margin: 16px 0;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Estilos para notificaciones de error */
+.notification-enter {
+  animation: notificationSlide 0.3s ease-out;
+}
+
+@keyframes notificationSlide {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
