@@ -120,3 +120,44 @@
     opacity: 1;
   }
 }
+
+/* Estilos para nuevas funcionalidades HU1 y HU2 */
+
+/* Animaciones para notificaciones */
+.notification-enter {
+  animation: slideInFromRight 0.3s ease-out;
+}
+
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Transiciones suaves para cambio de tema */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Estilos para botones de exportación */
+#exportMarkdown:hover, #exportHTML:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Efectos especiales para botón de tema */
+#themeToggle {
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  position: relative;
+  overflow: hidden;
+}
+
+#themeToggle:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 15px rgba(102, 126, 234, 0.4);
+}

@@ -44,7 +44,7 @@ function markdownToHtml(markdown) {
   // Procesar párrafos
   html = processParagraphs(html);
 
-  // Aplicar estilos de sintaxis
+  
   try {
     // 🎯 HU1: Validación de entrada vacía
     if (!markdown || markdown.trim() === "") {
@@ -65,12 +65,12 @@ function markdownToHtml(markdown) {
       );
     }
 
-    return html;
   } catch (error) {
     // Manejo centralizado de errores
     handleMarkdownError(error);
     return generateErrorHTML(error.message);
   }
+  return html;
 }
 
 // 🎯 HU2: Función para validar sintaxis Markdown
@@ -505,26 +505,25 @@ window.addEventListener("load", function () {
   // Generar vista previa inicial
   autoUpdatePreview();
 
-  // Mostrar información de nuevas funcionalidades
-  console.log(`
-  📚 NUEVAS FUNCIONALIDADES AGREGADAS:
-  
-  🆕 HU1: Preview Automático
-  - La vista previa se actualiza automáticamente mientras escribes
-  - Sin necesidad de hacer clic en botones
-  - Optimizado con debouncing para mejor rendimiento
-  
-  🆕 HU2: Botón Limpiar Editor
-  - Botón rojo "🗑️ Limpiar Editor"
-  - Limpia tanto editor como vista previa
-  - Incluye confirmación para evitar pérdida accidental
-  
-  🆕 HU3: Contador Dinámico
-  - Contador de palabras en tiempo real
-  - Contador de caracteres (con y sin espacios)
-  - Animaciones visuales al actualizar números
-  - Timestamp de última actualización
-  `);
+  // 🆕 Inicializar sistema de temas
+initializeThemeSystem();
+
+// Mostrar información de las nuevas funcionalidades
+console.log(`
+📚 NUEVAS FUNCIONALIDADES HU1 y HU2:
+
+🆕 HU1: Exportación de Contenido
+- Botón "📥 Exportar MD" - Descarga archivo .md
+- Botón "📄 Exportar HTML" - Descarga archivo .html completo
+- Validación de contenido vacío con manejo de excepciones
+- Feedback visual en botones y notificaciones
+
+🆕 HU2: Modo Oscuro/Claro  
+- Botón "🌙 Modo Oscuro / ☀️ Modo Claro"
+- Toggle completo de toda la interfaz
+- Persistencia durante la sesión actual
+- Transiciones suaves entre temas
+`);
 });
 
 // Función de ayuda para mostrar ejemplos

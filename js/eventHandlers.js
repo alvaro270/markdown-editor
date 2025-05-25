@@ -148,6 +148,36 @@ function setupExistingHandlers() {
     });
   }
   
+  // 🆕 HU1: Handler para exportar Markdown
+const exportMDBtn = document.querySelector("#exportMarkdown");
+if (exportMDBtn) {
+  exportMDBtn.addEventListener("click", function(event) {
+    console.log('📥 Exportando como Markdown');
+    event.preventDefault();
+    exportAsMarkdown();
+  });
+}
+
+// 🆕 HU1: Handler para exportar HTML
+const exportHTMLBtn = document.querySelector("#exportHTML");
+if (exportHTMLBtn) {
+  exportHTMLBtn.addEventListener("click", function(event) {
+    console.log('📄 Exportando como HTML');
+    event.preventDefault();
+    exportAsHTML();
+  });
+}
+
+// 🆕 HU2: Handler para toggle de tema
+const themeBtn = document.querySelector("#themeToggle");
+if (themeBtn) {
+  themeBtn.addEventListener("click", function(event) {
+    console.log('🎨 Cambiando tema');
+    event.preventDefault();
+    toggleTheme();
+  });
+}
+
   console.log('✅ Handlers existentes configurados');
 }
 
