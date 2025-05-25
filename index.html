@@ -12,47 +12,82 @@
     <!-- Header -->
     <header class="bg-blue-600 text-white p-4 shadow-lg">
       <h1 class="text-2xl font-bold text-center">
-        Editor Avanzado de Markdown
+        Editor Avanzado de Markdown en Vivo
       </h1>
     </header>
 
-    <!-- Barra de herramientas - Desktop: Top, Mobile: Bottom -->
-    <div
-      class="toolbar fixed top-20 md:top-16 left-0 right-0 bg-white shadow-md p-3 z-10 md:relative md:top-0"
-    >
-      <div class="flex justify-center gap-4 flex-wrap">
-        <button
-          id="generatePreview"
-          class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
-        >
-          🔄 Generar Vista Previa
-        </button>
-        <button
-          id="contrastHeadings"
-          class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
-        >
-          🎨 Contrastar Encabezados
-        </button>
-        <!-- 🆕 NUEVO BOTÓN PARA HU1 -->
-        <button
-          id="applyFormat"
-          class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
-        >
-          ✨ Aplicar Formato
-        </button>
+    <!-- 🆕 HU3: Contador de Palabras y Caracteres -->
+    <div class="bg-white shadow-md p-4">
+      <div class="container mx-auto">
+        <div class="flex justify-center gap-6">
+          <div class="counter-card text-white px-6 py-3 rounded-lg shadow-lg">
+            <div class="text-center">
+              <div class="text-2xl font-bold counter-number" id="wordCount">0</div>
+              <div class="text-sm opacity-90">Palabras</div>
+            </div>
+          </div>
+          <div class="counter-card text-white px-6 py-3 rounded-lg shadow-lg">
+            <div class="text-center">
+              <div class="text-2xl font-bold counter-number" id="charCount">0</div>
+              <div class="text-sm opacity-90">Caracteres</div>
+            </div>
+          </div>
+          <div class="counter-card text-white px-6 py-3 rounded-lg shadow-lg">
+            <div class="text-center">
+              <div class="text-2xl font-bold counter-number" id="charCountNoSpaces">0</div>
+              <div class="text-sm opacity-90">Sin Espacios</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Barra de herramientas -->
+    <div class="toolbar bg-white shadow-md p-3 z-10">
+      <div class="container mx-auto">
+        <div class="flex justify-center gap-4 flex-wrap">
+          <button
+            id="generatePreview"
+            class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+          >
+            🔄 Generar Vista Previa
+          </button>
+          <button
+            id="contrastHeadings"
+            class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+          >
+            🎨 Contrastar Encabezados
+          </button>
+          <button
+            id="applyFormat"
+            class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+          >
+            ✨ Aplicar Formato
+          </button>
+          <!-- 🆕 HU2: Botón Limpiar Editor -->
+          <button
+            id="clearEditor"
+            class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+          >
+            🗑️ Limpiar Editor
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- Main Content -->
-    <main class="container mx-auto p-4 pt-24 md:pt-4">
+    <main class="container mx-auto p-4">
       <!-- Grid responsivo: columnas en desktop, filas en mobile -->
-      <div
-        class="grid grid-cols-1 md:grid-cols-2 gap-4 h-screen max-h-96 md:max-h-screen"
-      >
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 h-screen max-h-96 md:max-h-screen">
         <!-- Editor -->
         <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-          <div class="bg-gray-800 text-white p-3">
+          <div class="bg-gray-800 text-white p-3 flex justify-between items-center">
             <h2 class="font-semibold">📝 Editor Markdown</h2>
+            <!-- 🆕 Indicador de escritura en vivo -->
+            <div class="flex items-center gap-2">
+              <div id="liveIndicator" class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+              <span class="text-sm opacity-75">En vivo</span>
+            </div>
           </div>
           <textarea
             id="markdownEditor"
@@ -73,9 +108,8 @@
 console.log('Hola Mundo');
 ```
 
-¡Escribe tu Markdown aquí!"
-          >
-# Mi Primer Encabezado
+¡Escribe tu Markdown aquí y ve la vista previa en tiempo real!"
+          ># Mi Primer Encabezado
 ## Encabezado Nivel 2
 
 ## Lista de tareas:
@@ -91,21 +125,24 @@ console.log('Hola Mundo');
 console.log('Hola Mundo');
 ```
 
-¡Escribe tu Markdown aquí!</textarea
-          >
+¡Escribe tu Markdown aquí y ve la vista previa en tiempo real!</textarea>
         </div>
 
         <!-- Preview -->
         <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-          <div class="bg-blue-800 text-white p-3">
+          <div class="bg-blue-800 text-white p-3 flex justify-between items-center">
             <h2 class="font-semibold">👁️ Vista Previa HTML</h2>
+            <!-- 🆕 Timestamp de última actualización -->
+            <div class="text-sm opacity-75">
+              <span id="lastUpdated">Actualizado: --:--</span>
+            </div>
           </div>
           <div
             id="htmlPreview"
             class="preview-area h-64 md:h-96 p-4 overflow-y-auto bg-gray-50"
           >
             <p class="text-gray-500 italic">
-              Haz clic en "Generar Vista Previa" para ver el resultado HTML...
+              La vista previa se actualizará automáticamente mientras escribes...
             </p>
           </div>
         </div>
@@ -115,14 +152,16 @@ console.log('Hola Mundo');
     <!-- Footer -->
     <footer class="bg-gray-800 text-white text-center p-4 mt-8">
       <p>
-        &copy; 2024 Editor de Markdown - Desarrollado con HTML, CSS y JavaScript
+        &copy; 2024 Editor de Markdown en Vivo - Desarrollado con HTML, CSS y JavaScript
       </p>
     </footer>
+
 
     <!-- Scripts en orden de dependencia -->
     <script src="js/format.js"></script>
     <script src="js/lists.js"></script>
     <script src="js/blocks.js"></script>
+    <script src="js/eventHandlers.js"></script>
     <script src="js/app.js"></script>
   </body>
 </html>

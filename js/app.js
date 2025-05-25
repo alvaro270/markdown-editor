@@ -1,5 +1,5 @@
-// 🎯 APLICACIÓN PRINCIPAL - INTEGRACIÓN DE TODOS LOS MÓDULOS
-// Conceptos integrados: DOM, Callbacks, Funciones de orden superior
+// 🎯 APLICACIÓN PRINCIPAL - INTEGRACIÓN CON EVENT HANDLING
+// Nuevos conceptos: Event Handling Básico para actualización automática
 
 // ========================================
 // 1. SELECCIÓN DE ELEMENTOS DEL DOM
@@ -8,11 +8,19 @@
 const generateBtn = document.querySelector("#generatePreview");
 const contrastBtn = document.querySelector("#contrastHeadings");
 const formatBtn = document.querySelector("#applyFormat");
+const clearBtn = document.querySelector("#clearEditor"); // 🆕 HU2
 const editor = document.querySelector("#markdownEditor");
 const preview = document.querySelector("#htmlPreview");
 
-// Variable para controlar el estado del contraste
+// 🆕 HU3: Elementos del contador
+const wordCountEl = document.querySelector("#wordCount");
+const charCountEl = document.querySelector("#charCount");
+const charCountNoSpacesEl = document.querySelector("#charCountNoSpaces");
+const lastUpdatedEl = document.querySelector("#lastUpdated");
+
+// Variables de estado
 let isContrasted = false;
+let updateTimeout = null; // Para optimizar las actualizaciones automáticas
 
 // ========================================
 // 2. FUNCIÓN MEJORADA PARA CONVERTIR MARKDOWN A HTML
@@ -21,18 +29,16 @@ let isContrasted = false;
 function markdownToHtml(markdown) {
   let html = markdown;
 
-  // 🎯 PASO 1: PROCESAR BLOQUES DE CÓDIGO (HU3)
-  // Usar funciones de primera clase para el resaltado
+  // Procesar bloques de código
   html = processCodeBlocks(html);
-
-  // 🎯 PASO 2: PROCESAR LISTAS (HU2)
-  // Usar funciones de orden superior con callbacks
+  
+  // Procesar listas
   html = processMarkdownLists(html);
-
-  // 🎯 PASO 3: PROCESAR ENCABEZADOS (funcionalidad original mejorada)
+  
+  // Procesar encabezados
   html = processHeaders(html);
-
-  // 🎯 PASO 4: PROCESAR PÁRRAFOS
+  
+  // Procesar párrafos
   html = processParagraphs(html);
 
   return html;
@@ -42,32 +48,21 @@ function markdownToHtml(markdown) {
 // 3. FUNCIONES AUXILIARES PARA MARKDOWN
 // ========================================
 
-/**
- * Procesa encabezados usando regex mejorado
- * @param {string} html - HTML en proceso
- * @returns {string} - HTML con encabezados procesados
- */
 function processHeaders(html) {
-  // Regex mejorado para encabezados
   html = html.replace(/^# (.+)$/gm, "<h1>$1</h1>");
   html = html.replace(/^## (.+)$/gm, "<h2>$1</h2>");
   html = html.replace(/^### (.+)$/gm, "<h3>$1</h3>");
   html = html.replace(/^#### (.+)$/gm, "<h4>$1</h4>");
   html = html.replace(/^##### (.+)$/gm, "<h5>$1</h5>");
   html = html.replace(/^###### (.+)$/gm, "<h6>$1</h6>");
-  //  PROCESAR FORMATO DE TEXTO (NEGRITA Y CURSIVA)
+  
+  // Procesar formato de texto
   html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   html = html.replace(/\*([^*]+)\*/g, "<em>$1</em>");
   return html;
 }
 
-/**
- * Procesa párrafos evitando conflictos con listas y código
- * @param {string} html - HTML en proceso
- * @returns {string} - HTML con párrafos procesados
- */
 function processParagraphs(html) {
-  // Dividir en líneas para procesar párrafos
   const lines = html.split('\n');
   const result = [];
   let inParagraph = false;
@@ -75,7 +70,6 @@ function processParagraphs(html) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     
-    // Detectar si es una línea que no debe estar en párrafo
     const isSpecialLine = line.startsWith('<h') || 
                          line.startsWith('<ul') || 
                          line.startsWith('<ol') || 
@@ -86,18 +80,15 @@ function processParagraphs(html) {
                          line === '';
     
     if (isSpecialLine) {
-      // Cerrar párrafo si estaba abierto
       if (inParagraph) {
         result.push('</p>');
         inParagraph = false;
       }
       
-      // Añadir la línea especial
       if (line !== '') {
         result.push(line);
       }
     } else {
-      // Es contenido de párrafo
       if (!inParagraph) {
         result.push('<p>');
         inParagraph = true;
@@ -106,7 +97,6 @@ function processParagraphs(html) {
     }
   }
   
-  // Cerrar párrafo final si está abierto
   if (inParagraph) {
     result.push('</p>');
   }
@@ -115,41 +105,173 @@ function processParagraphs(html) {
 }
 
 // ========================================
-// 4. FUNCIÓN PRINCIPAL PARA GENERAR VISTA PREVIA
+// 4. 🆕 HU1: FUNCIÓN PARA ACTUALIZACIÓN AUTOMÁTICA
+// ========================================
+
+/**
+ * Actualiza la vista previa automáticamente (HU1)
+ * Usa debouncing para optimizar rendimiento
+ */
+function autoUpdatePreview() {
+  // Limpiar timeout anterior para evitar actualizaciones excesivas
+  if (updateTimeout) {
+    clearTimeout(updateTimeout);
+  }
+  
+  // Programar actualización después de 300ms de inactividad
+  updateTimeout = setTimeout(() => {
+    try {
+      const markdownContent = editor.value;
+      const htmlContent = markdownToHtml(markdownContent);
+      
+      preview.innerHTML = htmlContent;
+      applySyntaxHighlightingStyles();
+      
+      // 🆕 HU3: Actualizar contadores al mismo tiempo
+      updateCounters();
+      
+      // Actualizar timestamp
+      updateLastModified();
+      
+      console.log('✅ Vista previa actualizada automáticamente');
+      
+    } catch (error) {
+      console.error('❌ Error en actualización automática:', error);
+    }
+  }, 300); // 300ms de delay para evitar actualizaciones excesivas
+}
+
+// ========================================
+// 5. 🆕 HU2: FUNCIÓN PARA LIMPIAR EDITOR
+// ========================================
+
+/**
+ * Limpia completamente el editor y la vista previa (HU2)
+ */
+function clearEditor() {
+  // Confirmar acción para evitar pérdida accidental
+  const confirmClear = confirm('¿Estás seguro de que quieres limpiar todo el contenido?');
+  
+  if (confirmClear) {
+    // Limpiar editor
+    editor.value = '';
+    
+    // Limpiar vista previa
+    preview.innerHTML = '<p class="text-gray-500 italic">El editor está vacío. Comienza a escribir para ver la vista previa...</p>';
+    
+    // 🆕 HU3: Resetear contadores
+    resetCounters();
+    
+    // Enfocar el editor para facilitar escritura inmediata
+    editor.focus();
+    
+    // Feedback visual
+    showClearFeedback();
+    
+    console.log('🗑️ Editor limpiado completamente');
+  }
+}
+
+// ========================================
+// 6. 🆕 HU3: FUNCIONES PARA CONTADOR DE PALABRAS
+// ========================================
+
+/**
+ * Actualiza los contadores de palabras y caracteres (HU3)
+ */
+function updateCounters() {
+  const text = editor.value;
+  
+  // Contar palabras (dividir por espacios y filtrar vacíos)
+  const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+  
+  // Contar caracteres totales
+  const totalChars = text.length;
+  
+  // Contar caracteres sin espacios
+  const charsNoSpaces = text.replace(/\s/g, '').length;
+  
+  // Actualizar DOM con animación
+  animateCounterUpdate(wordCountEl, words);
+  animateCounterUpdate(charCountEl, totalChars);
+  animateCounterUpdate(charCountNoSpacesEl, charsNoSpaces);
+}
+
+/**
+ * Anima la actualización de un contador individual
+ */
+function animateCounterUpdate(element, newValue) {
+  const currentValue = parseInt(element.textContent) || 0;
+  
+  if (currentValue !== newValue) {
+    // Agregar clase de animación
+    element.classList.add('updated');
+    element.textContent = newValue;
+    
+    // Remover clase después de la animación
+    setTimeout(() => {
+      element.classList.remove('updated');
+    }, 200);
+  }
+}
+
+/**
+ * Resetea todos los contadores a cero
+ */
+function resetCounters() {
+  animateCounterUpdate(wordCountEl, 0);
+  animateCounterUpdate(charCountEl, 0);
+  animateCounterUpdate(charCountNoSpacesEl, 0);
+}
+
+// ========================================
+// 7. FUNCIONES DE FEEDBACK VISUAL
+// ========================================
+
+function showClearFeedback() {
+  clearBtn.textContent = "✅ ¡Limpiado!";
+  clearBtn.classList.remove("bg-red-500");
+  clearBtn.classList.add("bg-green-600");
+  
+  setTimeout(() => {
+    clearBtn.textContent = "🗑️ Limpiar Editor";
+    clearBtn.classList.remove("bg-green-600");
+    clearBtn.classList.add("bg-red-500");
+  }, 1500);
+}
+
+function updateLastModified() {
+  const now = new Date();
+  const timeString = now.toLocaleTimeString('es-ES', { 
+    hour: '2-digit', 
+    minute: '2-digit',
+    second: '2-digit'
+  });
+  lastUpdatedEl.textContent = `Actualizado: ${timeString}`;
+}
+
+// ========================================
+// 8. FUNCIONES EXISTENTES (SIN CAMBIOS IMPORTANTES)
 // ========================================
 
 function generatePreview() {
   try {
-    // Obtener contenido del editor
     const markdownContent = editor.value;
-    
-    // 🎯 INTEGRAR TODAS LAS FUNCIONALIDADES
-    // 1. Procesar con funciones de orden superior y callbacks
     const htmlContent = markdownToHtml(markdownContent);
     
-    // 2. Insertar HTML en el preview
     preview.innerHTML = htmlContent;
-    
-    // 3. Aplicar estilos CSS adicionales para código
     applySyntaxHighlightingStyles();
+    updateCounters(); // 🆕 Actualizar contadores también
+    updateLastModified();
     
-    // 4. Feedback visual mejorado
     showSuccessFeedback();
-    
-    // 🔍 DEBUG: Mostrar información en consola
-    console.log('✅ Vista previa generada exitosamente');
-    debugCodeBlocks(markdownContent);
-    debugListDetection(markdownContent);
+    console.log('✅ Vista previa generada manualmente');
     
   } catch (error) {
     console.error('❌ Error al generar vista previa:', error);
     showErrorFeedback();
   }
 }
-
-// ========================================
-// 5. FUNCIONES DE FEEDBACK VISUAL
-// ========================================
 
 function showSuccessFeedback() {
   generateBtn.textContent = "✅ ¡Generado!";
@@ -175,12 +297,7 @@ function showErrorFeedback() {
   }, 2000);
 }
 
-// ========================================
-// 6. FUNCIÓN PARA APLICAR ESTILOS DE SINTAXIS
-// ========================================
-
 function applySyntaxHighlightingStyles() {
-  // Crear estilos dinámicos para resaltado de sintaxis
   if (!document.getElementById('syntax-styles')) {
     const style = document.createElement('style');
     style.id = 'syntax-styles';
@@ -195,10 +312,6 @@ function applySyntaxHighlightingStyles() {
   }
 }
 
-// ========================================
-// 7. FUNCIÓN PARA CONTRASTAR ENCABEZADOS (MEJORADA)
-// ========================================
-
 function contrastHeadings() {
   const headings = preview.querySelectorAll("h1, h2, h3, h4, h5, h6");
   
@@ -207,10 +320,8 @@ function contrastHeadings() {
     return;
   }
   
-  // Toggle del contraste
   isContrasted = !isContrasted;
   
-  // Usar callback para aplicar estilos a cada encabezado
   const applyContrastCallback = function(heading) {
     if (isContrasted) {
       heading.classList.add("contrasted-heading");
@@ -227,10 +338,7 @@ function contrastHeadings() {
     }
   };
   
-  // 🎯 APLICAR CALLBACK A CADA ENCABEZADO
   headings.forEach(applyContrastCallback);
-  
-  // Actualizar botón
   updateContrastButton();
 }
 
@@ -247,119 +355,94 @@ function updateContrastButton() {
 }
 
 // ========================================
-// 8. EVENT LISTENERS PRINCIPALES
+// 9. 🆕 EVENT HANDLERS - NUEVAS FUNCIONALIDADES
 // ========================================
 
-// HU1: Evento para aplicar formato
+// 🆕 HU1: Event listener para actualización automática
+editor.addEventListener('input', autoUpdatePreview);
+
+// 🆕 HU2: Event listener para limpiar editor
+clearBtn.addEventListener('click', clearEditor);
+
+// Event listeners existentes
 formatBtn.addEventListener("click", function() {
   console.log('🎯 HU1: Aplicando formato con callbacks...');
   toggleTextFormat();
 });
 
-// Evento para generar preview (integra HU2 y HU3)
 generateBtn.addEventListener("click", function() {
-  console.log('🎯 HU2 & HU3: Generando vista previa con funciones de orden superior...');
+  console.log('🎯 Generando vista previa manualmente...');
   generatePreview();
 });
 
-// Evento para contrastar encabezados
 contrastBtn.addEventListener("click", function() {
   console.log('🎨 Aplicando contraste a encabezados...');
   contrastHeadings();
 });
 
 // ========================================
-// 9. FUNCIONES DE INICIALIZACIÓN
+// 10. INICIALIZACIÓN
 // ========================================
 
-// Generar preview automáticamente al cargar
 window.addEventListener("load", function() {
-  console.log('🚀 Aplicación cargada - Generando vista previa inicial...');
-  generatePreview();
+  console.log('🚀 Aplicación cargada - Configurando funcionalidades...');
   
-  // Mostrar información de funcionalidades en consola
+  // Generar vista previa inicial
+  autoUpdatePreview();
+  
+  // Mostrar información de nuevas funcionalidades
   console.log(`
-  📚 FUNCIONALIDADES DISPONIBLES:
+  📚 NUEVAS FUNCIONALIDADES AGREGADAS:
   
-  🎯 HU1: Formato de Texto (Funciones de Orden Superior)
-  - Selecciona texto y haz clic en "Aplicar Formato"
-  - Alterna entre negrita (**texto**) y cursiva (*texto*)
+  🆕 HU1: Preview Automático
+  - La vista previa se actualiza automáticamente mientras escribes
+  - Sin necesidad de hacer clic en botones
+  - Optimizado con debouncing para mejor rendimiento
   
-  🎯 HU2: Listas Dinámicas (Callbacks)
-  - Escribe listas numeradas: 1. Item 1, 2. Item 2
-  - Escribe listas con viñetas: - Item o * Item
-  - Se procesan automáticamente al generar vista previa
+  🆕 HU2: Botón Limpiar Editor
+  - Botón rojo "🗑️ Limpiar Editor"
+  - Limpia tanto editor como vista previa
+  - Incluye confirmación para evitar pérdida accidental
   
-  🎯 HU3: Resaltado de Código (Funciones de Primera Clase)
-  - Usa triple backticks para bloques de código: \`\`\`javascript
-  - Soporte para JavaScript, Python, HTML
-  - Resaltado automático de sintaxis
+  🆕 HU3: Contador Dinámico
+  - Contador de palabras en tiempo real
+  - Contador de caracteres (con y sin espacios)
+  - Animaciones visuales al actualizar números
+  - Timestamp de última actualización
   `);
 });
 
-// Ajuste responsivo de toolbar
-function adjustToolbarPosition() {
-  const toolbar = document.querySelector(".toolbar");
-  if (window.innerWidth < 768) {
-    toolbar.classList.remove("top-20", "md:top-16");
-    toolbar.classList.add("bottom-0");
-  } else {
-    toolbar.classList.remove("bottom-0");
-    toolbar.classList.add("top-20", "md:top-16");
-  }
-}
-
-window.addEventListener("load", adjustToolbarPosition);
-window.addEventListener("resize", adjustToolbarPosition);
-
-// ========================================
-// 10. FUNCIÓN DE AYUDA PARA ESTUDIANTES
-// ========================================
-
-/**
- * Función para mostrar ejemplos de cada funcionalidad
- * Útil para entender cómo funcionan los callbacks
- */
+// Función de ayuda para mostrar ejemplos
 function showExamples() {
-  const examples = `
-# Ejemplos de Funcionalidades
+  const examples = `# ¡Prueba las Nuevas Funcionalidades!
 
-## HU1: Formato de Texto
-Selecciona este texto y usa el botón "Aplicar Formato"
+## 🆕 HU1: Preview Automático
+¡Escribe aquí y ve cómo se actualiza automáticamente la vista previa!
 
-## HU2: Listas Automáticas
+## 🆕 HU2: Limpiar Editor
+Usa el botón rojo "🗑️ Limpiar Editor" para empezar de nuevo.
 
-### Lista Numerada:
-1. Primer elemento
-2. Segundo elemento
-3. Tercer elemento
+## 🆕 HU3: Contadores Dinámicos
+Observa cómo los contadores se actualizan mientras escribes:
+- Palabras
+- Caracteres totales  
+- Caracteres sin espacios
 
-### Lista con Viñetas:
-- Elemento A
-- Elemento B
-- Elemento C
+### Lista de ejemplo:
+1. Primera funcionalidad completada ✅
+2. Segunda funcionalidad completada ✅
+3. Tercera funcionalidad completada ✅
 
-## HU3: Resaltado de Código
-
+### Código de ejemplo:
 \`\`\`javascript
-function ejemplo() {
-  const mensaje = "¡Hola Mundo!";
-  console.log(mensaje);
-  return true;
-}
+// ¡El preview se actualiza automáticamente!
+console.log("¡Nuevas funcionalidades funcionando!");
 \`\`\`
 
-\`\`\`python
-def ejemplo():
-    mensaje = "¡Hola Python!"
-    print(mensaje)
-    return True
-\`\`\`
-  `;
+¡Sigue escribiendo para ver las funcionalidades en acción!`;
   
   editor.value = examples;
-  generatePreview();
+  // No necesitamos llamar generatePreview() porque se actualiza automáticamente
 }
 
-// Agregar función de ayuda al objeto global para fácil acceso
 window.showExamples = showExamples;
